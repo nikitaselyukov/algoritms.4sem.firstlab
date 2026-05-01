@@ -355,25 +355,33 @@ def particle_swarm(
             inertia = 1.0
 
         for particle in particles:
-            r1 = random.random()
-            r2 = random.random()
+            # Независимые случайные коэффициенты для каждой координаты и компоненты
+            r1x, r1y = random.random(), random.random()
+            r2x, r2y = random.random(), random.random()
             particle.vx = (
                 inertia * particle.vx
-                + c1 * r1 * (particle.pbest_x - particle.x)
-                + c2 * r2 * (gbest_x - particle.x)
+                + c1 * r1x * (particle.pbest_x - particle.x)
+                + c2 * r2x * (gbest_x - particle.x)
             )
             particle.vy = (
                 inertia * particle.vy
-                + c1 * r1 * (particle.pbest_y - particle.y)
-                + c2 * r2 * (gbest_y - particle.y)
+                + c1 * r1y * (particle.pbest_y - particle.y)
+                + c2 * r2y * (gbest_y - particle.y)
             )
 
             if velocity_limit is not None:
                 particle.vx = clamp(particle.vx, -velocity_limit, velocity_limit)
                 particle.vy = clamp(particle.vy, -velocity_limit, velocity_limit)
 
-            particle.x = clamp(particle.x + particle.vx)
-            particle.y = clamp(particle.y + particle.vy)
+            new_x = particle.x + particle.vx
+            new_y = particle.y + particle.vy
+            # При выходе за границу — отражение скорости, чтобы не прилипать к стенкам
+            if new_x < LOWER_BOUND or new_x > UPPER_BOUND:
+                particle.vx *= -0.5
+            if new_y < LOWER_BOUND or new_y > UPPER_BOUND:
+                particle.vy *= -0.5
+            particle.x = clamp(new_x)
+            particle.y = clamp(new_y)
             value = evaluate(particle.x, particle.y)
 
             if value < particle.pbest_value:
